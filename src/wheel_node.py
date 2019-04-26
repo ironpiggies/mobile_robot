@@ -21,7 +21,7 @@ def main():
     vel_thread.start()
 
     ## 1. Initialize a subscriber
-    rospy.Subscriber('/command_vel', WheelCmdVel, cmdvel_callback)
+    rospy.Subscriber('/command_vel', Twist, cmdvel_callback)
     
     rospy.spin()
 
@@ -86,24 +86,33 @@ def publish_vel():
 
         # parse the 2 split strings into 2 floats
         try:
+	    b = 0.23
             v_L = float(splitData[0])
             v_R = float(splitData[1])
             
-            # publish velocity as a Twist msg
-            vel = Twist()
-            vel.linear.x = (v_L+v_R)/2
-            if (abs(v_L) < abs(v_R)):
-                turning_radius = abs((v_L+v_R)*b / (v_L-v_R))
-                vel.angular.z = vel.linear.x / turning_radius
-            elif (abs(v_L) > abs(v_R)):
-                turning_radius = -1 * abs(-(v_L+v_R)*b / (v_L-v_R))
-                vel.angular.z = vel.linear.x / turning_raduis
-            else:
-                vel.angular.z = 0.0
+	    try:
+            	# publish velocity as a Twist msg
+            	vel = Twist()
+            	vel.linear.x = (v_L+v_R)/2
+		#print 'check 1'
+            	if (abs(v_L) < abs(v_R)):
+		    #print 'check 2 A'
+                    turning_radius = abs((v_L+v_R)*b / (v_L-v_R))
+                    vel.angular.z = vel.linear.x / turning_radius
+		    #print 'check 2 B'
+            	elif (abs(v_L) > abs(v_R)):
+		    #print 'check 3 A'
+                    turning_radius = -1.0 * abs(-1.0*(v_L+v_R)*b / (v_L-v_R))
+                    vel.angular.z = vel.linear.x / turning_radius
+		    #print 'check 3 B'
+                else:
+                    vel.angular.z = 0.0
+		#print 'got here at least'	    
+                velPub.publish(vel)
+	    except:
+		print 'ugh'
         except:
             print 'Cannot parse ', splitData
-        
-        velPub.publish(vel)
             
 
 if __name__=='__main__':

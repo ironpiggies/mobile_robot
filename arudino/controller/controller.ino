@@ -35,10 +35,11 @@ void loop() {
         // 2. Update position and velocity
         robotPose.update(encoder.dThetaL, encoder.dThetaR);
         robotVel.update(encoder.v_L, encoder.v_R);
+        //robotVel.update(5.0, 5.0);
 
         // 3. Send odometry through serial communication
         //serialComm.send(robotPose); used for sending position data
-        serialComm.send(robotVel);
+        serialComm.sendVel(robotVel);
         serialComm.receiveSerialData();
 
         // 4. Send the velocity command to wheel velocity controller

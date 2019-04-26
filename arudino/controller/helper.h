@@ -124,6 +124,16 @@ class SerialComm {
             prevSerialTime = current_time;
         }
     }
+    
+    void sendVel(const RobotVel& robotVel) {
+        unsigned long current_time = micros();
+        if (current_time - prevSerialTime >= SERIAL_PERIOD_MICROS) {
+            Serial.print(robotVel.v_L, 6);  Serial.print(","); //v_R
+            Serial.print(robotVel.v_R, 6);  Serial.println(",");
+            prevSerialTime = current_time;
+        }
+    }
+    
   private: 
     unsigned long prevSerialTime;
 };
