@@ -9,7 +9,7 @@ import serial
 import tf.transformations as tfm
 from geometry_msgs.msg import Pose, Quaternion, Twist
 import helper
-
+import numpy as np
 serialComm = serial.Serial('/dev/ttyACM0', 115200, timeout = 5)
 
 def main():
@@ -28,16 +28,24 @@ def main():
 
 def cmdvel_callback(msg):  
     ## 2. Turn the twist message into wheel velocities and send them to the arduino
+    print 'Got a velocity command'
     if msg.angular.z != 0:
-        b = 0.21 # distance between center of robot and wheels
+        print 'Calculating turn'
+	b = 0.21 # distance between center of robot and wheels
         turning_radius = msg.linear.x / msg.angular.z
-        v_L = msg.angular.z * (turning_radius - b*np.sign(turning_radius))
-        v_R = msg.angular.z * (turning_radius + b*np.sign(turning_radius))
+        if turning_radius != 0:
+	    v_L = msg.angular.z * (turning_radius - b*np.sign(turning_radius))
+            v_R = msg.angular.z * (turning_radius + b*np.sign(turning_radius))
+	else:
+	    v_L = -1.0 * msg.angular.z * b
+	    v_R = msg.angular.z * b    
     else:
-        v_L = msg.angular.x
-        v_R = msg.angular.x
+        print 'Going straight'
+	v_L = msg.linear.x
+        v_R = msg.linear.x
 
     strCmd =  str(v_L) + ',' + str(v_R) + '\n'
+    print 'Writing wheel velocities ', strCmd
     serialComm.write(strCmd)
     
 
