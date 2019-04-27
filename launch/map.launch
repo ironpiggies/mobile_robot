@@ -5,6 +5,4 @@
 
   <param name="robot_description" command="$(find xacro)/xacro '$(find mobile_robot)/model/me212bot.xacro'"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="robot_base_to_map" args="2 0.35 0 0 0 0.7071 0.7071 map robot_base 10"/>
-
 </launch>
