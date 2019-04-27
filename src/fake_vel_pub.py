@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 
+#-----------------------------------------------#
+#                                               #
+# This file just outputs a constanst velocity   #
+# command. Used for testing and debugging.      #
+#                                               #
+#-----------------------------------------------#
+
+
 import rospy
 from geometry_msgs.msg import TwistStamped
 
+
 def talker():
-    pub = rospy.Publisher('command_vel', TwistStamped, queue_size=1)
-    rospy.init_node('talker', anonymous=True)
+    pub = rospy.Publisher('/command_vel', TwistStamped, queue_size=1)
+    rospy.init_node('constant_vel', anonymous=True)
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
         cmd = TwistStamped()
