@@ -14,7 +14,7 @@
 from dead_reckoning import DeadReckoning
 from numpy import pi as PI
 import rospy
-from geometry_msgs.msg import PoseStamped, Pose, TwistStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 
 
 class Localize():
@@ -26,14 +26,15 @@ class Localize():
                 notation (rad)
         output: Publishes the pose of robot_base at specified frequency
         '''
-        self.pos = DeadReckoning(starting_pose)
+        self.pos = DeadReckoning(poseSt)
         
         self.pos_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size = 10)
         self.vel_sub = rospy.Subscriber('/command_vel', TwistStamped, self.vel_callback)
-        
+
         self.rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             self.pos_pub.publish(self.pos.poseSt)
+            self.rate.sleep()
 
     def vel_callback(self, twistSt):
         self.pos.update(twistSt)
@@ -42,8 +43,9 @@ class Localize():
 if __name__ == '__main__':
     rospy.init_node('localization_node')
     # set up an initial position
-    s = Pose()
-    s.position.x = 2.25
-    s.position.y = 0.3
-    s.orientation.z = PI/2
+    s = PoseStamped()
+    s.pose.position.x = 2.1
+    s.pose.position.y = 0.4
+    s.pose.orientation.z = PI/2
+    s.header.stamp = rospy.Time()
     localizer = Localize(s)

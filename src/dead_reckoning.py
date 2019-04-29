@@ -26,7 +26,12 @@ class DeadReckoning():
         self.y = poseSt.pose.position.y
         self.theta = poseSt.pose.orientation.z
         self.update_time = rospy.get_time()
+        
         self.poseSt = PoseStamped()
+        self.poseSt.pose.position.x = self.x
+        self.poseSt.pose.position.y = self.y
+        self.poseSt.pose.orientation.z = self.theta
+        self.poseSt.header.stamp = rospy.Time()
 
     def update(self, twistSt):
         '''
