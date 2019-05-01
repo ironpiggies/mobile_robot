@@ -19,4 +19,4 @@ def make_path(checkpoints, res):
 
 
 #Global Paths
-PATH_A = make_path([ (2.0,0.0) , (2.0,0.5) , (1.0,2.0) , (1.0,1.5) ], 0.1)
+PATH_A = make_path([ (2.1,0.1) , (2.0,1.0) , (1.0,2.0) , (0.7, 2.0), (0.7,1.8) ], 0.05)

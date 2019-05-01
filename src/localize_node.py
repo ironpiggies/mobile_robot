@@ -14,8 +14,8 @@
 from dead_reckoning import DeadReckoning
 from numpy import pi as PI
 import rospy
-from geometry_msgs.msg import PoseStamped, TwistStamped
-
+from geometry_msgs.msg import PoseStamped, TwistStamped, PoseWithCovarianceStamped
+import tf
 
 class Localize():
     def __init__(self, poseSt):
@@ -30,7 +30,7 @@ class Localize():
         
         self.pos_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size = 10)
         self.vel_sub = rospy.Subscriber('/command_vel', TwistStamped, self.vel_callback)
-
+        self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.reset)
         self.rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             self.pos_pub.publish(self.pos.poseSt)
@@ -38,6 +38,14 @@ class Localize():
 
     def vel_callback(self, twistSt):
         self.pos.update(twistSt)
+
+    def reset(self, poseCovSt):
+        poseSt = PoseStamped()
+        poseSt.pose = poseCovSt.pose.pose
+        orientation = poseCovSt.pose.pose.orientation
+        q = (0,0,orientation.z, orientation.w)
+        poseSt.pose.orientation.z = tf.transformations.euler_from_quaternion(q)[2]
+        self.pos.reset(poseSt)
 
 
 if __name__ == '__main__':

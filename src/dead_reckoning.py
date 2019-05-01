@@ -10,7 +10,7 @@
 
 import tf
 import rospy
-from numpy import sin, cos
+import numpy as np
 from geometry_msgs.msg import PoseStamped, TwistStamped
 
 
@@ -44,10 +44,10 @@ class DeadReckoning():
         self.update_time = rospy.get_time()
         twist = twistSt.twist
         # if no rotation...
-        if msg.angular.z==0:
+        if twist.angular.z==0:
             dx = dt * twist.linear.x
-            self.x += dx*cos(self.theta)
-            self.y += dx*sin(self.theta)
+            self.x += dx*np.cos(self.theta)
+            self.y += dx*np.sin(self.theta)
         # if there is rotation...
         else:
             r = twist.linear.x / twist.angular.z
