@@ -28,27 +28,31 @@ def cmdvel_callback(twistSt):
                 values are assumed to be zero except linear.x and angular.z
     output:     Sends the desired velocity to the Arduino controller.
     '''
+    twist = twistSt.twist
     # If turning...
-    if twistSt.twist.angular.z != 0:
+    print twist
+    if twist.angular.z != 0:
 	b = 0.23
-        tr = msg.linear.x / msg.angular.z
+        tr = twist.linear.x / twist.angular.z
         if tr != 0:
-	    v_L = twistSt.twist.angular.z * (tr - b*np.sign(tr))
-            v_R = twistSt.twist.angular.z * (tr + b*np.sign(tr))
+	    print tr
+	    v_L = twist.angular.z * (tr - b*np.sign(tr))
+            v_R = twist.angular.z * (tr + b*np.sign(tr))
 	else:
-	    v_L = -1.0 * twistSt.twist.angular.z * b
-	    v_R = twistSt.twist.angular.z * b    
+	    v_L = -1.0 * twist.angular.z * b
+	    v_R = twist.angular.z * b    
     # If straight...
     else:
-	v_L = msg.linear.x
-        v_R = msg.linear.x
+	v_L = twist.linear.x
+        v_R = twist.linear.x
 
     # Limit max wheel velocity, keeping ratio the same
-    scale = min(MAX_WHEEL_VEL / max(v_L, v_R), 1.0)
+    scale = min(MAX_WHEEL_VEL / max(abs(v_L), abs(v_R)), 1.0)
     v_L = v_L*scale
     v_R = v_R*scale
 
     strCmd =  str(v_L) + ',' + str(v_R) + '\n'
+    print strCmd
     serialComm.write(strCmd)
 
 
@@ -92,5 +96,5 @@ if __name__=='__main__':
     rospy.init_node('wheels', anonymous=True)
     vel_thread = threading.Thread(target = publish_vel)
     vel_thread.start()
-    rospy.Subscriber('/command_vel', Twist, cmdvel_callback)
+    rospy.Subscriber('/command_vel', TwistStamped, cmdvel_callback)
     rospy.spin()

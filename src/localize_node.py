@@ -29,7 +29,7 @@ class Localize():
         self.pos = DeadReckoning(poseSt)
         
         self.pos_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size = 10)
-        self.vel_sub = rospy.Subscriber('/command_vel', TwistStamped, self.vel_callback)
+        self.vel_sub = rospy.Subscriber('/measured_vel', TwistStamped, self.vel_callback)
         self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.reset)
         self.rate = rospy.Rate(30)
         while not rospy.is_shutdown():
