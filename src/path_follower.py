@@ -7,8 +7,8 @@ from visualization_msgs.msg import Marker
 
 class SimplePursuit():
     def __init__(self):
-        self.v = 0.1
-        self.look_ahead = 2
+        self.v = 0.2
+        self.look_ahead = 5
         self.x = None
         self.y = None
         self.theta = None
@@ -40,18 +40,19 @@ class SimplePursuit():
         rx = dx*np.cos(self.theta) + dy*np.sin(self.theta)
         ry = -dx*np.sin(self.theta) + dy*np.cos(self.theta)
         vel = TwistStamped()
-        
-        if rx**2 + ry**2 < self.stop_dist and target_ind==len(self.path)-1:
+       
+        # publish no velocity if at the end of the path
+        if rx**2 + ry**2 < self.stop_dist**2 and target_ind==len(self.path)-1:
             self.vel_pub.publish(vel)
             return
 
-        vel.twist.linear.x = self.v
+        # allow for forward or reverse driving
+        vel.twist.linear.x = self.v * np.sign(rx)
         # if ry==0, drive straight
         # otherwise, calculate turn
         if ry != 0:
             R = (rx**2+ry**2)/(2*ry)
-            vel.twist.angular.z = self.v / R
-
+            vel.twist.angular.z = self.v / R * np.sign(rx)
         self.vel_pub.publish(vel)
 
     def posCallback(self, poseSt):
