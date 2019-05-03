@@ -62,10 +62,15 @@ class ParticleFilter():
 	# use odom to find change in position from particle frames
         dt = rospy.get_time() - self.last_update_time
         self.last_update_time = rospy.get_time()
-        r = self.odom[0] / self.odom[1]
-        dtheta = self.odom[1]*dt
-        dx = r*(np.cos(dtheta)-1)
-        dy = r*np.sin(dtheta)
+	if odom[1] == 0:
+	    # driving straight
+	    dx = dt*odom[0]
+	    dy = 0
+	else:
+            r = self.odom[0] / self.odom[1]
+            dtheta = self.odom[1]*dt
+            dx = abs(r)*np.sin(dtheta)
+            dy = r*(1-np.cos(dtheta))
 
         # convert to change in global pose
         delta_x = dx*np.cos(self.particles[:,2:3]) - dy*np.sin(self.particles[:,2:3])
@@ -124,10 +129,15 @@ class ParticleFilter():
         '''
         Updates the particle positions and uses the current weights to publish an inferred pose
         '''
-
-
         # get the inferred position
+	pos = self.inferLocation()
+	poseSt = PoseStamped()
+	poseSt.header.frame_id = self.ref_frame
+	poseSt.pose.position.x = pos[0]
+	poseSt.pose.position.y = pos[1]
+	poseSt.pose.orientation.z = pos[2]
         # publish the inferred position
+	self.frame_pub.publish(poseSt)
 
 
     def setParticleLocations(self):
