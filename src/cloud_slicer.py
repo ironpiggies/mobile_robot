@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import rospy
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import PointCloud2
@@ -70,9 +69,22 @@ def cloudToArray(cloud):
 
     pc = ros_numpy.numpify(cloud)
     points = np.zeros((pc.size,3))
-    points[:,0]=pc['z'].reshape(pc.size) + x_offset
-    points[:,1]=pc['x'].reshape(pc.size) + y_offset
-    points[:,2]=pc['y'].reshape(pc.size) + z_offset
+    points[:,0]=pc['z'].reshape(pc.size)
+    points[:,1]=-1.0*pc['x'].reshape(pc.size)
+    points[:,2]=pc['y'].reshape(pc.size)
+
+    # handle rotation
+    theta_x = 0.0
+    theta_y = 0.0
+    theta_z = 0.0
+    points[:,0] = points[:,0]*np.cos(theta_y) - points[:,2]*np.sin(theta_y)
+    points[:,2] = points[:,0]*np.sin(theta_y) + points[:,2]*np.cos(theta_y)
+
+    # handle offsets
+    points[:,0] += x_offset
+    points[:,1] += y_offset
+    points[:,2] += z_offset
+
     return points
 
 def arrayToSphereList(array):
