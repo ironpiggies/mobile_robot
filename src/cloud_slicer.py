@@ -38,7 +38,7 @@ class CloudSlicer():
 		rand = np.random.rand(points.shape[1])
 		y = points.dot(rand)
 		unique, index = np.unique(y, return_index=True)
-		points = points[index]
+		points = points[index].astype(float)
 		# convert back to meters
 		points = points / self.m_to_px
 		# convert to Marker
@@ -81,7 +81,8 @@ def arrayToSphereList(array):
     marker.type = 8
     marker.color.r = 1.0
     marker.color.a = 1.0
-    marker.header.frame_id = '/robot_base'
+    marker.scale.x, marker.scale.y, marker.scale.z = 0.1,0.1,0.1
+    marker.header.frame_id = '/base_link'
     for pt in array:
 	p = Point()
 	p.x, p.y = pt[0], pt[1]
