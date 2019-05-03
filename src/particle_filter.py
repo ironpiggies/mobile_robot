@@ -11,66 +11,77 @@ class ParticleFilter():
     to be, based on a Monte Carlo approach.
     '''
 
-    def __init__(self, weighted_map, number_of_particles=10, hz=50, std_noise_x=0.1, std_noise_y=0.05):
+    def __init__(self, weighted_map, number_of_particles=100, hz=50, std_noise_x=0.1, std_noise_y=0.05):
         
         #-----CONSTANT VARIABLES-----#
         self.N = number_of_particles    # number of particles to simulate
         self.rate = rospy.Rate(hz)      # rate at which to try to publish position
         self.std_x = std_noise_x        # standard deviation of noise in x direction
         self.std_y = std_noise_y        # standard deviation of noise in y direction
-	self.map_scale = 1000		# pixels per meter
+	self.m_to_px = 1000		# pixels per meter
         
-        self.weighted_map = weighted_map
-        
+        self.weighted_maps = np.tile(weighted_map, (self.N,1,1))
+        self.map_width = weighted_map.shape[1]
+        self.map_height = weighted_map.shape[2]
         #-----CALLBACK VARIABLES-----#
         self.latest_cloud = None
         self.latest_odom = None
-        self.last_update = None
+        self.last_update_time = None
         
         #-----PARTICLES-----#
-        self.particles = np.zeros((N,3))
-	self.weights = np.zeros((N,1))
+        self.particles = np.zeros((self.N,3,1))
+	self.weights = np.zeros((self.N,1,1))
 
         #-----COMMUNICATION PARAMETERS-----#
         # odometry should be a twist message
         self.odom_topic = '/odom'
         # cloud should be a pointcloud2 message
-        self.cloud_topic = '/cloud_data'
+        self.cloud_topic = '/sliced_cloud'
         # this topic will be updated with the inferred pose of the robot
         self.ref_frame = '/base_link'
   
         # initialize publishers/subscribers
         self.frame_pub = rospy.Publisher(self.ref_frame, PoseStamped, queue_size=1)
-        self.odom_sub = rospy.Subscriber(self.odom_topic, TwistStamped, odomCallback)
-        self.cloud_sub = rospy.Subscriber(self.cloud_topic, PointCloud2, cloudCallback)
+        self.vel_sub = rospy.Subscriber(self.odom_topic, TwistStamped, self.velCallback)
+        self.cloud_sub = rospy.Subscriber(self.cloud_topic, PointCloud2, self.cloudCallback)
 
         #-----RUN THE FILTER-----#
         while not rospy.is_shutdown():
             self.runFilter()
             self.rate.sleep()
+            break
 
             
-    def odomCallback(self, twistSt):
+    def velCallback(self, twistSt):
         '''
         Updates the particle filter with the new odometry data
 
         msg     TwistStamped message
         output  Updates self.latest_odom with [linear_velocity, angular_velocity]
         '''
-        odom = np.array([twistSt.twist.linear.x, twistSt.twist.angular.z])
+        # set the current time on the first itteration
+        if self.last_update_time == None:
+            self.last_update_time = rospy.get_time()
+            return
+
+        vel = np.array([twistSt.twist.linear.x, twistSt.twist.angular.z])
         
-	# use odom to find change in position from particle frames
+	# use vel to find change in position from particle frames
         dt = rospy.get_time() - self.last_update_time
         self.last_update_time = rospy.get_time()
-	if odom[1] == 0:
+	if vel[1] == 0:
 	    # driving straight
 	    dx = dt*odom[0]
 	    dy = 0
 	else:
             r = self.odom[0] / self.odom[1]
             dtheta = self.odom[1]*dt
-            dx = abs(r)*np.sin(dtheta)
+            dx = r*np.sin(dtheta)
             dy = r*(1-np.cos(dtheta))
+
+        # add noise to the motion
+        dx += np.random.normal(0, self.std_x, (self.N,1))
+        dy += np.random.normal(0, self.std_y, (self.N,1))
 
         # convert to change in global pose
         delta_x = dx*np.cos(self.particles[:,2:3]) - dy*np.sin(self.particles[:,2:3])
@@ -86,44 +97,52 @@ class ParticleFilter():
         msg     pointCloud2 message
         output  Updates self.particle_weights with probability of each particle being the true location
         '''
-        bit_maps = np.zeros((self.N, map_width, map_height))
+ 
+        ## convert points to numpy array in the robot frame
+        #points = [[],[]]
+        #for p in pc2.read_points(msg, skip_nans=True):
+        #    x = p[2] + self.cam_x_offset
+        #    y = -p[0] + self.cam_y_offset
+        #    z = -p[1] + self.cam_z_offset
+        #    if z > self.z_min and z < self.z_max:
+        #        points[0].append(x)
+        #        points[1].append(y)
+        points = msg
+        pts = np.zeros((1,3,len(points[0])))
+        pts[0,0:2,:] = points
+        
+        # repeat for each particle
+        pts = np.tile(pts, (self.N, 1,1))
+        pts[:,0:1,:] = np.tile(np.arange(self.N).reshape((self.N,1,1)), (1,1,pts.shape[2]))
+        
 
-        # plot each point from the cloud onto the height_maps
-        for point in pc2.read_points(msg, skip_nans=True):
-		
-	    # skip if point is not within z range
-	    if point[2] < self.height_min or point[2] > self.height_max:
-		continue
+        # convert from particle frames to global frame
+        points = np.zeros(pts.shape)
+        points[:,0:1,:] = pts[:,0:1,:]
+        points[:,1:2] = pts[0,1:2]*np.cos(self.particles[:,2:3]) - pts[0,2:3]*np.sin(self.particles[:,2:3]) + self.particles[:,0:1]
+        points[:,1:2] = pts[0,1:2]*np.sin(self.particles[:,2:3]) + pts[0,2:3]*np.cos(self.particles[:,2:3]) + self.particles[:,1:2]
 
-            # convert from particle frames to global frame
-            x = point[0]*np.cos(self.particles[:,2:3]) - point[1]*np.sin(self.particles[:,2:3]) + particles[:,0:1]
-            y = point[0]*np.sin(self.particles[:,2:3]) + point[1]*np.cos(self.particles[:,2:3]) + particles[:,1:2]
-            coords = np.hstack((np.arange(self.N).reshape((self.N,1)), x, y))
-           
-            # convert distanct coordinates to pixel indicies
-            ind = (coords*self.map_scale).astype(int)
-            
-            # remove indicies where x or y is out of bounds
-            ind = ind[np.logical_and(ind[:,1:2] >= 0, ind[:,1:2] < self.map_width), :]
-            ind = ind[np.logical_and(ind[:,2:3] >= 0, ind[:,2:3] < self.map_height), :]
+        # convert distance coordinates to pixel indicies
+        points[:,1:2] = points[:,1:2]*self.m_to_px
+        points[:,2:3] = points[:,2:3]*self.m_to_px
+        points = points.astype(int)
 
-            # put ones on the bit_maps at each calculated index
-            bit_maps[ind] = 1
+        # reshape to 2d for indexing into weighted map
+        points = np.reshape(points.transpose(2,0,1), (points.size//3,3), order='F')
+        
+        # remove points outside of the map boundaries
+        points = points[((points[:,1:2] >=0) * (points[:,1:2] < self.map_width)).flatten(), :]
+        points = points[((points[:,2:3] >=0) * (points[:,2:3] < self.map_height)).flatten(), :] 
 
-	# multiply bit_maps by the weights
-	probability_maps = bit_maps * self.weighted_map
-
-	# sum the probabilites within each map to determine weights
-	prob_sum = np.sum(probability_maps, axis=0)
-	weights = prob_sum / np.sum(prob_sum)
+        prob_sum =  np.sum(self.weighted_maps[points[:,0], points[:,1], points[:,2]].reshape((self.N, points.shape[0]//self.N)), axis=1)
+        weights = prob_sum / np.sum(prob_sum)
 	
         # resample the particles based on the new weights
         particle_ind = np.arange(self.N)
-        keep_ind = np.random.choice(particle_ind, p=self.weights)
+        keep_ind = np.random.choice(particle_ind, self.N, p=weights)
         self.particles = self.particles[keep_ind, :]
-	new_weights = weights[keep_ind, :]
+	new_weights = weights[keep_ind].reshape(self.N,1)
 	self.weights = new_weights / np.sum(new_weights)
-
 
     def runFilter(self):
         '''
@@ -144,11 +163,24 @@ class ParticleFilter():
         pass
 
     def inferLocation(self):
-        x_hist = np.histogram(self.particles[:,0:1], weights=self.weights)
-        x_inf = np.min(self.particles[:,0]) + (np.argmax(x_hist)+0.5) * (np.max(self.particles[:,0])-np.min(self.particles[:,0]))
-        y_hist = np.histogram(self.particles[:,1:2], weights=self.weights)
-        y_inf = np.min(self.particles[:,1]) + (np.argmax(y_hist)+0.5) * (np.max(self.particles[:,1])-np.min(self.particles[:,1]))
-        t_hist = np.histogram(self.particles[:,0:3], weights=self.weights)
-        t_inf = np.min(self.particles[:,3]) + (np.argmax(t_hist)+0.5) * (np.max(self.particles[:,2])-np.min(self.particles[:,2]))
+        x_hist, edges = np.histogram(self.particles[:,0:1], weights=self.weights)
+        x_inf = (edges[np.argmax(x_hist)] + edges[np.argmax(x_hist)]) / 2.0
+        y_hist, edges = np.histogram(self.particles[:,1:2], weights=self.weights)
+        y_inf = (edges[np.argmax(y_hist)] + edges[np.argmax(y_hist)]) / 2.0
+        t_hist, edges = np.histogram(self.particles[:,2:3], weights=self.weights)
+        t_inf = (edges[np.argmax(t_hist)] + edges[np.argmax(t_hist)]) / 2.0
         return [x_inf, y_inf, t_inf]
 
+
+
+if __name__ == '__main__':
+    rospy.init_node('testing')
+    weight_map = 1+np.zeros((1,244,244))
+    pf = ParticleFilter(weight_map)
+    x_vals = [0.0, 0.5, 1.0]*1000
+    y_vals = [0.1, 0.2, 0.3]*1000
+    points = [x_vals, y_vals]
+    t_start = rospy.get_time()
+    pf.cloudCallback(points)
+    t_end = rospy.get_time()
+    print 'Time: ', t_end-t_start
