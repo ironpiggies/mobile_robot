@@ -44,7 +44,6 @@ void loop() {
 
         // 4. Send the velocity command to wheel velocity controller
         wheelVelCtrl.doPIControl("Left",  serialComm.desiredWV_L, encoder.v_L);
-        Serial.println(serialComm.desiredWV_L); 
         wheelVelCtrl.doPIControl("Right", serialComm.desiredWV_R, encoder.v_R);
 
         prevTime = currentTime; // update time

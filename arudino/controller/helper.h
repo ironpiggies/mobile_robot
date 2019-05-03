@@ -111,8 +111,8 @@ class SerialComm {
                 command[i] = tempString.toFloat();
                 commandString = commandString.substring(indexPointer+1);
             }
-            desiredWV_R = command[0];
-            desiredWV_L = command[1];
+            desiredWV_L = command[0];
+            desiredWV_R = command[1];
         }
     }
     void send(const RobotPose& robotPose) {

@@ -35,9 +35,11 @@ def cmdvel_callback(twistSt):
 	b = 0.23
         tr = twist.linear.x / twist.angular.z
         if tr != 0:
-	    print tr
-	    v_L = twist.angular.z * (tr - b*np.sign(tr))
-            v_R = twist.angular.z * (tr + b*np.sign(tr))
+	    print 'tr: ',tr
+	    print 'left radius:  ', tr - b*np.sign(tr)
+	    print 'right radius: ', tr + b*np.sign(tr)
+	    v_L = twist.angular.z * (tr - b)
+            v_R = twist.angular.z * (tr + b)
 	else:
 	    v_L = -1.0 * twist.angular.z * b
 	    v_R = twist.angular.z * b    
@@ -47,6 +49,7 @@ def cmdvel_callback(twistSt):
         v_R = twist.linear.x
 
     # Limit max wheel velocity, keeping ratio the same
+    print 'V_L: ', v_L, ' V_R: ', v_R
     scale = min(MAX_WHEEL_VEL / max(abs(v_L), abs(v_R)), 1.0)
     v_L = v_L*scale
     v_R = v_R*scale
