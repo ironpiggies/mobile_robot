@@ -18,7 +18,7 @@ class ParticleFilter():
         self.rate = rospy.Rate(hz)      # rate at which to try to publish position
         self.std_x = std_noise_x        # standard deviation of noise in x direction
         self.std_y = std_noise_y        # standard deviation of noise in y direction
-	self.m_to_px = 1000		# pixels per meter
+	self.m_to_px = 100		# pixels per meter
         
         self.weighted_maps = np.tile(weighted_map, (self.N,1,1))
         self.map_width = weighted_map.shape[1]
@@ -94,20 +94,14 @@ class ParticleFilter():
         '''
         Updates the weight of each particle based on the cloud data
 
-        msg     pointCloud2 message
+        msg     a marker message
         output  Updates self.particle_weights with probability of each particle being the true location
         '''
- 
-        ## convert points to numpy array in the robot frame
-        #points = [[],[]]
-        #for p in pc2.read_points(msg, skip_nans=True):
-        #    x = p[2] + self.cam_x_offset
-        #    y = -p[0] + self.cam_y_offset
-        #    z = -p[1] + self.cam_z_offset
-        #    if z > self.z_min and z < self.z_max:
-        #        points[0].append(x)
-        #        points[1].append(y)
-        points = msg
+ 	points = [[],[]]
+        for p in msg.points:
+	    points[0].append(p.x)
+	    points[1].append(p.y)
+	
         pts = np.zeros((1,3,len(points[0])))
         pts[0,0:2,:] = points
         
