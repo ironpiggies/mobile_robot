@@ -4,7 +4,7 @@ from visualization_msgs.msg import Marker
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 import numpy as np
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PoseStamped
 import ros_numpy
 # takes in the camera topic and finds points within a specified height
 # also does the transformation from camera frame to robot_base
@@ -25,10 +25,12 @@ class CloudSlicer():
         self.center_field = 1.21
         self.field_buffer = 0.1
         self.pub = rospy.Publisher('/sliced_cloud', Marker, queue_size=1)
-        self.sub = rospy.Subscriber('/camera/depth/points', PointCloud2, self.cloudCallback)
+        self.pos_sub = rospy.Subscriber('/robot_base', PoseStamped, self.updateRobotPos)
+	self.cloud_sub = rospy.Subscriber('/camera/depth/points', PointCloud2, self.cloudCallback)
     
         self.last_cloud = None
         self.up_to_date = True
+	self.skip_next = False
 
         while not rospy.is_shutdown():
             if not self.up_to_date:
@@ -43,8 +45,17 @@ class CloudSlicer():
 		# publish
 		self.pub.publish(marker)
     
+    def updateRobotPos(self, poseSt):
+	self.robot_x = poseSt.pose.position.x
+	self.robot_y = poseSt.pose.position.y
+	self.robot_theta = poseSt.pose.orientation.z
+
     def cloudCallback(self, cloud):
-        self.last_cloud = cloud
+        if self.skip_next == True:
+	    self.skip_next = False
+	    return
+	self.skip_next=True
+	self.last_cloud = cloud
         self.up_to_date = False
 
     def extractFromCloud(self, cloud):
