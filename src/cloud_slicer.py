@@ -102,7 +102,7 @@ class CloudSlicer():
         marker.color.r = 1.0
         marker.color.a = 1.0
         marker.scale.x, marker.scale.y, marker.scale.z = 0.01,0.01,0.01
-        marker.header.frame_id = '/base_link'
+        marker.header.frame_id = '/robot_base'
         for pt in array:
 	    p = Point()
  	    p.x, p.y = pt[0], pt[1]
