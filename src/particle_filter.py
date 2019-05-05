@@ -244,7 +244,7 @@ class ParticleFilter():
 
 if __name__ == '__main__':
     rospy.init_node('particle_filter')
-    weight_map = np.array(Image.open("/home/robot/mobile_robot_ws/src/mobile_robot/maps/field_map.png"))[:,:,0].astype(float)
+    weight_map = np.array(Image.open("/home/robot/mobile_robot_ws/src/mobile_robot/maps/weighted_map.png"))[:,:,0].astype(float)
     weight_map = weight_map / np.max(weight_map)
     print weight_map[weight_map != 0]
     weight_map = np.flipud(weight_map)
