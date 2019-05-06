@@ -18,10 +18,12 @@ def apriltag_callback(data):
     for detection in data.detections:
         id=detection.id
         if ((id == 1)or(id==0)or(id==2)or(id==3)):   # tag id is one the correct ones that are on game board
+            #somewhere in here we need to add april tag location relative to map
+
             poselist_tag_cam = pose2poselist(detection.pose)
             poselist_tag_base = transformPose(lr, poselist_tag_cam, 'camera', 'robot_base')
             poselist_base_tag = invPoselist(poselist_tag_base)
-            poselist_base_map = transformPose(lr, poselist_base_tag, 'apriltag', 'map')
+            poselist_base_map = transformPose(lr, poselist_base_tag, 'apriltag'+str(id), 'map') 
             pubFrame(br, pose = poselist_base_map, frame_id = '/robot_base_est', parent_frame_id = '/map')
 
 

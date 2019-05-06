@@ -1,0 +1,8 @@
+<launch>
+
+<node pkg="tf" type="static_transform_publisher" name="apriltag0" args="1.66 1.87 .24 .5 -.5 -.5 -.5 map apriltag0 100" />
+<node pkg="tf" type="static_transform_publisher" name="apriltag1" args="1 0 0 0 0 0 1 map apriltag1 100" />
+<node pkg="tf" type="static_transform_publisher" name="apriltag2" args="1 0 0 0 0 0 1 map apriltag2 100" />
+<node pkg="tf" type="static_transform_publisher" name="apriltag3" args="1 0 0 0 0 0 1 map apriltag3 100" />
+
+</launch>
