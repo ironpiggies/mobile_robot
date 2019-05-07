@@ -4,7 +4,7 @@
 #                                               #
 # This file creates a node for publishing the   #
 # current pose of the robot to /robot_base. The #
-# current design only implements dead reckoning # 
+# current design only implements dead reckoning #
 # but should be extended to include an option   #
 # for localizing with the particle filter.      #
 #                                               #
@@ -27,7 +27,7 @@ class Localize():
         output: Publishes the pose of robot_base at specified frequency
         '''
         self.pos = DeadReckoning(poseSt)
-        
+
         self.pos_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size = 10)
         self.vel_sub = rospy.Subscriber('/measured_vel', TwistStamped, self.vel_callback)
         self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.reset)

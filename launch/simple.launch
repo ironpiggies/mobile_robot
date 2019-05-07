@@ -1,0 +1,10 @@
+<launch>
+
+  <arg name="map" default="$(find mobile_robot)/maps/field_map.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro '$(find mobile_robot)/model/me212bot.xacro'"/>
+
+  <node name="robot_base_broadcaster" pkg="mobile_robot" type="broadcaster_node.py" />
+
+</launch>
