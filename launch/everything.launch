@@ -1,0 +1,16 @@
+<launch>
+
+  <arg name="map" default="$(find mobile_robot)/maps/field_map.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro '$(find mobile_robot)/model/me212bot.xacro'"/>
+
+  <node name="localization_node" pkg="mobile_robot" type="particle_filter.py" />
+  <node name="robot_base_broadcaster" pkg="mobile_robot" type="broadcaster_node.py" />
+
+  <node name="wheel_node" pkg="mobile_robot" type="wheel_node.py" />
+  <node name="path_pub" pkg="mobile_robot" type="path_pub_node.py" />
+  <node name="path_follower" pkg="mobile_robot" type="path_follower.py" />
+  <node name="cloud_slicer" pkg="mobile_robot" type="cloud_slicer.py" />
+
+</launch>
