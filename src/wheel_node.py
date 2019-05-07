@@ -45,7 +45,10 @@ def cmdvel_callback(twistSt):
         v_R = twist.linear.x
 
     # Limit max wheel velocity, keeping ratio the same
-    scale = min(MAX_WHEEL_VEL / max(abs(v_L), abs(v_R)), 1.0)
+    if v_L!=0 or v_R != 0:
+    	scale = min(MAX_WHEEL_VEL / max(abs(v_L), abs(v_R)), 1.0)
+    else:
+	scale = 1.0
     v_L = v_L*scale
     v_R = v_R*scale
 

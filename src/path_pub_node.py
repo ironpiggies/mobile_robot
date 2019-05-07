@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from paths import PATH_A, PATH_AR
+from paths import *
 import rospy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, PoseStamped
@@ -9,9 +9,10 @@ from geometry_msgs.msg import Point, PoseStamped
 class PathPlanner():
     
     def __init__(self):
-        self.paths = {'A': PATH_A,
-                      'AR': PATH_AR}
-        self.state = 'A'
+        self.paths = {0: PATH_A,
+                      1: PATH_B,
+		      2: PATH_C}
+        self.state = 0
         self.path_pub = rospy.Publisher('/path', Marker, queue_size=1)
         self.pos_sub = rospy.Subscriber('/robot_base', PoseStamped, self.posCallback)
         
@@ -39,11 +40,10 @@ class PathPlanner():
         pos_y = poseSt.pose.position.y
         target_x = self.paths[self.state][-1][0]
         target_y = self.paths[self.state][-1][1]
-        if (pos_x-target_x)**2 + (pos_y-target_y)**2 < 0.1**2:
-            if self.state == 'A':
-                self.state = 'AR'
-            else:
-                self.state = 'A'
+        if (pos_x-target_x)**2 + (pos_y-target_y)**2 < 0.07**2:
+            self.state += 1
+	if self.state == 3:
+	    self.state = 0
 
 
 if __name__=='__main__':

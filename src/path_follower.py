@@ -8,7 +8,7 @@ from visualization_msgs.msg import Marker
 class SimplePursuit():
     def __init__(self):
         self.v = 0.2
-        self.look_ahead = 5
+        self.look_ahead = 4
         self.x = None
         self.y = None
         self.theta = None
@@ -53,7 +53,13 @@ class SimplePursuit():
         if ry != 0:
             R = (rx**2+ry**2)/(2*ry)
             vel.twist.angular.z = self.v / R * np.sign(rx)
-        self.vel_pub.publish(vel)
+	# if the target is less than 45 degress behind you, do not drive backwards
+	ang = np.arctan2(ry, rx)
+	if vel.twist.linear.x < 0.0 and abs(ang) < 3.0/4.0*np.pi:
+	    vel.twist.linear.x = -1.0*vel.twist.linear.x
+	    vel.twist.angular.z = -1.0*vel.twist.linear.x
+        
+	self.vel_pub.publish(vel)
 
     def posCallback(self, poseSt):
         self.x = poseSt.pose.position.x

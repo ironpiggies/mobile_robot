@@ -16,13 +16,13 @@ class ParticleFilter():
     to be, based on a Monte Carlo approach.
     '''
 
-    def __init__(self, weighted_map, number_of_particles=100, hz=50, std_noise_x=0.01, std_noise_y=0.001):
+    def __init__(self, weighted_map, number_of_particles=50, hz=20, std_noise_x=0.01, std_noise_y=0.005):
         #-----CONSTANT VARIABLES-----#
         self.N = number_of_particles    # number of particles to simulate
         self.rate = rospy.Rate(hz)      # rate at which to try to publish position
         self.std_x = std_noise_x        # standard deviation of noise in x direction
         self.std_y = std_noise_y        # standard deviation of noise in y direction
-	self.std_theta = 0.06
+	self.std_theta = 0.03
 	self.m_to_px = 100		# pixels per meter
         
         self.weighted_maps = np.tile(weighted_map, (self.N,1,1))
@@ -57,6 +57,7 @@ class ParticleFilter():
 	    # show the particles
 	    self.publishParticles()
 	    self.runFilter()
+ 	    #print self.weights
             self.rate.sleep()
 
     def publishParticles(self):
@@ -103,14 +104,16 @@ class ParticleFilter():
             dy = r*(1-np.cos(dtheta))
 
         # add noise to the motion
-        dx += np.random.normal(0, self.std_x, (self.N,1,1))
-        dy += np.random.normal(0, self.std_y, (self.N,1,1))
-	dt += np.random.normal(0, self.std_theta, (self.N,1,1))
+        dx += np.random.normal(0.0, self.std_x, (self.N,1,1))
+        dy += np.random.normal(0.0, self.std_y, (self.N,1,1))
+	dt = np.random.normal(0.0, self.std_theta, (self.N,1,1))
 
         # convert to change in global pose
         delta_x = dx*np.cos(self.particles[:,2:3]) - dy*np.sin(self.particles[:,2:3])
         delta_y = dx*np.sin(self.particles[:,2:3]) + dy*np.cos(self.particles[:,2:3])
-        delta_theta = dtheta + dt
+        delta_theta = (dtheta + dt)
+	#print 'dhteta: ', dtheta
+	#print 'dt: ', min(dt), max(dt)
 	self.particles[:,0:1] += delta_x
         self.particles[:,1:2] += delta_y
 	self.particles[:,2:3] += delta_theta
@@ -182,14 +185,19 @@ class ParticleFilter():
 	#probs += 0.01
 	groups = np.arange(self.N)
 	prob_sum = []
+	counts = []
+	for i in range(self.N):
+	    counts.append(np.sum(i==points[:,0]))
+	max_counts = max(counts)
 	for g in range(self.N):
 	    #prob_sum.append((probs[g==points[:,0]]).size)
 	    prob_sum.append(np.sum(probs[g==points[:,0]]))
+	    #prob_sum.append(np.prod(probs[g==points[:,0]]+0.1)*0.01**(max_counts-counts[g]))
 	#print prob_sum
 	prob_sum = np.array(prob_sum)
 	#print 'prob sum: ', prob_sum	
 	#prob_sum =  np.sum(self.weighted_maps[points[:,0], points[:,1], points[:,2]].reshape((self.N, points.shape[0]//self.N)), axis=1)
-	if np.sum(prob_sum) == 0:
+	if points.shape[0]<50:
 	    print 'No particles match the seen image'
 	    return
 	weights = prob_sum / np.sum(prob_sum)
