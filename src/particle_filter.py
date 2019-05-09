@@ -36,6 +36,12 @@ class ParticleFilter():
         #-----PARTICLES-----#
         self.particles = np.zeros((self.N,3,1))
 	self.weights = np.zeros(self.N)
+    	start = PoseWithCovarianceStamped()
+    	start.pose.pose.position.x = 2.0
+    	start.pose.pose.position.y = 0.3
+    	start.pose.pose.orientation.z = 1.0
+    	start.pose.pose.orientation.w = 1.0
+    	self.setLocation(start)
 
         #-----COMMUNICATION PARAMETERS-----#
         # odometry should be a twist message
@@ -48,7 +54,7 @@ class ParticleFilter():
         # initialize publishers/subscribers
 	self.part_pub = rospy.Publisher('/particles', PoseArray, queue_size=1)
         self.frame_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size=1)
-        self.vel_sub = rospy.Subscriber('/measured_vel', TwistStamped, self.velCallback)
+        self.vel_sub = rospy.Subscriber('/command_vel', TwistStamped, self.velCallback)
         self.cloud_sub = rospy.Subscriber(self.cloud_topic, Marker, self.cloudCallback)
 	self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.setLocation)
 

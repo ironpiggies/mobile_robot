@@ -1,5 +1,5 @@
 <launch>
-
+  <include file="$(find freenect_launch)/launch/freenect.launch" />
   <arg name="map" default="$(find mobile_robot)/maps/field_map.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)"/>
 
@@ -12,5 +12,5 @@
   <node name="path_pub" pkg="mobile_robot" type="path_pub_node.py" />
   <node name="path_follower" pkg="mobile_robot" type="path_follower.py" />
   <node name="cloud_slicer" pkg="mobile_robot" type="cloud_slicer.py" />
-
+  <node name="rviz" pkg="rviz" type="rviz" />  
 </launch>

@@ -1,4 +1,4 @@
-image: field_map.png
+image: 212_map_with_delta.png
 resolution: 0.01
 origin: [0.0, 0.0, 0.0]
 occupied_thresh: 0.65
