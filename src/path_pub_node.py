@@ -24,8 +24,8 @@ class PathPlanner():
 	self.need_to_set_time = True
 	self.switch_dist = 0.07
 	self.waiter = True
-	self.start = False ### !!! Need to set to false for communication
-	self.pizza_transfered = False ### !!! Need to set to false for communication
+	self.start = True ### !!! Need to set to false for communication
+	self.pizza_transfered = True ### !!! Need to set to false for communication
         self.path_pub = rospy.Publisher('/path', Marker, queue_size=1)
 	self.dead_pub = rospy.Publisher('/dead', Bool, queue_size=1)
         self.pos_sub = rospy.Subscriber('/robot_base', PoseStamped, self.posCallback)
@@ -82,7 +82,9 @@ class PathPlanner():
 	if self.state==2:
 	    x = self.paths[2][-1][0]
 	    y = self.paths[2][-1][1]
-	    if (pos_x-x)**2 + (pos_y-y)**2 < self.switch_dist**2:
+	    #if (pos_x-x)**2 + (pos_y-y)**2 < self.switch_dist**2:
+	    #	self.state = 3
+	    if pos_x < 0.2:
 		self.state = 3
 
 	if self.state==3:
