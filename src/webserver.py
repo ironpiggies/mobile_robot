@@ -25,6 +25,7 @@ from threading import Thread
 HOST = ''
 PORT=8888
 
+rospy.set_param('status', '0')
 
 BUFFER_SIZE =50
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,12 +50,15 @@ def clientthread(conn):
             data = conn.recv(BUFFER_SIZE)
             if(len(data)>0):
                 pub.publish(data)
+                robo_status=rospy.get_param("/status")
+                conn.send(robo_status)
+
         except socket.timeout:
             print time.time()
             data = ''
             continue                      
         if not data: break
-        resp=0
+        
     conn.close()    
 
 def server():
