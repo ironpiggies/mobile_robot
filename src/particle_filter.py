@@ -8,6 +8,7 @@ from geometry_msgs.msg import Point, Pose, PoseStamped, TwistStamped, PoseWithCo
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2 as pc2
 from visualization_msgs.msg import Marker
+from std_msgs.msg import Bool
 
 class ParticleFilter():
     '''
@@ -24,7 +25,7 @@ class ParticleFilter():
         self.std_y = std_noise_y        # standard deviation of noise in y direction
 	self.std_theta = 0.03
 	self.m_to_px = 100		# pixels per meter
-        
+	self.dead = False        
         self.weighted_maps = np.tile(weighted_map, (self.N,1,1))
         self.map_width = weighted_map.shape[1]
         self.map_height = weighted_map.shape[2]
@@ -57,6 +58,7 @@ class ParticleFilter():
         self.vel_sub = rospy.Subscriber('/measured_vel', TwistStamped, self.velCallback)
         self.cloud_sub = rospy.Subscriber(self.cloud_topic, Marker, self.cloudCallback)
 	self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.setLocation)
+	self.dead_sub = rospy.Subscriber('/dead', Bool, self.deadCallback)
 
         #-----RUN THE FILTER-----#
         while not rospy.is_shutdown():
@@ -65,6 +67,9 @@ class ParticleFilter():
 	    self.runFilter()
  	    #print self.weights
             self.rate.sleep()
+
+    def deadCallback(self, msg):
+	self.dead = msg.data
 
     def publishParticles(self):
         poseAr = PoseArray()
@@ -213,11 +218,10 @@ class ParticleFilter():
 	prob_sum = np.array(prob_sum)
 	#print 'prob sum: ', prob_sum	
 	#prob_sum =  np.sum(self.weighted_maps[points[:,0], points[:,1], points[:,2]].reshape((self.N, points.shape[0]//self.N)), axis=1)
-	if N_points < 100:
+	if N_points < 100 or self.dead:
 	    self.std_x = 0.0 # 0.0000001
 	    self.std_y = 0.0 #000001
 	    self.std_theta = 0.0 #000001
-	    print 'No particles match the seen image'
 	    return
 	else:
 	    self.std_x = 0.01
@@ -275,7 +279,7 @@ class ParticleFilter():
 
 if __name__ == '__main__':
     rospy.init_node('particle_filter')
-    weight_map = np.array(Image.open("/home/robot/mobile_robot_ws/src/mobile_robot/maps/weighted_map.png"))[:,:,0].astype(float)
+    weight_map = np.array(Image.open("/home/robot/mobile_robot_ws/src/mobile_robot/maps/212_weight_map_with_delta.png"))[:,:,0].astype(float)
     weight_map = weight_map / np.max(weight_map)
     print weight_map[weight_map != 0]
     weight_map = np.flipud(weight_map)

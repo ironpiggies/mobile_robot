@@ -15,7 +15,7 @@ class CloudSlicer():
     
     def __init__(self):
         self.z_min = 0.02
-        self.z_max = 0.60
+        self.z_max = 0.15
 	self.m_to_px = 100
 	
 	self.robot_theta = 0.0

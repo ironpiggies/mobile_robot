@@ -20,7 +20,7 @@ import numpy as np
 
 serialComm = serial.Serial('/dev/ttyACM0', 115200, timeout = 5)
 
-MAX_WHEEL_VEL = 0.35
+MAX_WHEEL_VEL = 0.15#0.35
 def cmdvel_callback(twistSt):
     '''
     twistSt:    A TwistStamped message of the desired velocity in the

@@ -24,11 +24,12 @@ class PathPlanner():
 	self.need_to_set_time = True
 	self.switch_dist = 0.07
 	self.waiter = True
-	self.start = True ### !!! Need to set to false for communication
-	self.pizza_transfered = True ### !!! Need to set to false for communication
+	self.start = False ### !!! Need to set to false for communication
+	self.pizza_transfered = False ### !!! Need to set to false for communication
         self.path_pub = rospy.Publisher('/path', Marker, queue_size=1)
+	self.dead_pub = rospy.Publisher('/dead', Bool, queue_size=1)
         self.pos_sub = rospy.Subscriber('/robot_base', PoseStamped, self.posCallback)
-	self.com_sub = rospy.Subscriber('tcp_command', String, self.tcpCallback)
+	self.com_sub = rospy.Subscriber('/tcp_command', String, self.tcpCallback)
 	self.waiter_sub = rospy.Subscriber('/waiter', Bool, self.waiterCallback)        
         self.rate = rospy.Rate(10)
         while not rospy.is_shutdown():
@@ -40,9 +41,9 @@ class PathPlanner():
 	self.waiter = msg.data
 
     def tcpCallback(self, msg):
-	if msg == 'Start':
+	if msg.data == 'start':
 	    self.start = True
-	if msg == 'Transfered':
+	if msg.data == 'transfer':
 	    self.pizza_transfered = True
 
     def publish_PoseArray(self, path):
@@ -76,7 +77,7 @@ class PathPlanner():
 		if not self.waiter:
 		    self.paths[2] = PATH_1A
 		else:
-		    self.paths[3] = PATH_1B
+		    self.paths[2] = PATH_1B
 	
 	if self.state==2:
 	    x = self.paths[2][-1][0]
@@ -101,8 +102,12 @@ class PathPlanner():
 	if self.state==5:
 	    target_x = self.paths[5][-1][0]
 	    target_y = self.paths[5][-1][1]
+	    if pos_y > 1.7 and pos_x > 1.2:
+		cmd = Bool()
+		cmd.data = True
+		self.dead_pub.publish(cmd)
 	    if (pos_x-target_x)**2 + (pos_y-target_y)**2 < self.switch_dist**2:
-		# TELL DELTA THAT YOU ARE READY FOR THE PIZZA HERE
+		rospy.set_param('status', 'ready')
 		self.state = 6
 	
 	if self.state == 6:
@@ -119,6 +124,10 @@ class PathPlanner():
 	if self.state == 8:
 	    target_x = self.paths[8][-1][0]
 	    target_y = self.paths[8][-1][1]
+	    if pos_x < 1.2:
+		cmd = Bool()
+		cmd.data = False
+		self.dead_pub.publish(cmd)
 	    if (pos_x-target_x)**2 + (pos_y-target_y)**2 < self.switch_dist**2:
 	        self.state = 8
 
