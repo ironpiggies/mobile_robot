@@ -4,6 +4,7 @@ import rospy
 import numpy as np
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from visualization_msgs.msg import Marker
+from std_msgs.msg import Bool
 
 class SimplePursuit():
     def __init__(self):
@@ -13,21 +14,29 @@ class SimplePursuit():
         self.y = None
         self.theta = None
         self.stop_dist = 0.05
+	self.wait = False
         self.path = []
 
         self.vel_pub = rospy.Publisher('/command_vel', TwistStamped, queue_size=1)
         self.pos_sub = rospy.Subscriber('/robot_base', PoseStamped, self.posCallback)
         self.path_sub = rospy.Subscriber('/path', Marker, self.pathCallback)
-
+	self.waiter_sub = rospy.Subscriber('/waiter', Bool, self.waiterCallback)
         self.rate = rospy.Rate(20)
         while not rospy.is_shutdown():
             if self.x != None:
                 self.pubVelocity()
             self.rate.sleep()
 
+    def waiterCallback(self, msg):
+	if msg.data:
+	    if self.x<1.2 and self.x>0.3:
+		if self.y<1.8 and self.y>1.2:
+		    self.wait = True
+		    return
+	self.wait = False
 
     def pubVelocity(self):
-        if len(self.path)==0:
+        if len(self.path)==0 or self.wait:
             self.vel_pub.publish(TwistStamped())
             return
         # find nearest point
