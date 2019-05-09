@@ -54,7 +54,7 @@ class ParticleFilter():
         # initialize publishers/subscribers
 	self.part_pub = rospy.Publisher('/particles', PoseArray, queue_size=1)
         self.frame_pub = rospy.Publisher('/robot_base', PoseStamped, queue_size=1)
-        self.vel_sub = rospy.Subscriber('/command_vel', TwistStamped, self.velCallback)
+        self.vel_sub = rospy.Subscriber('/measured_vel', TwistStamped, self.velCallback)
         self.cloud_sub = rospy.Subscriber(self.cloud_topic, Marker, self.cloudCallback)
 	self.reset_sub = rospy.Subscriber('/initialpose', PoseWithCovarianceStamped, self.setLocation)
 
@@ -110,10 +110,19 @@ class ParticleFilter():
             dy = r*(1-np.cos(dtheta))
 
         # add noise to the motion
-        dx += np.random.normal(0.0, self.std_x, (self.N,1,1))
-        dy += np.random.normal(0.0, self.std_y, (self.N,1,1))
-	dt = np.random.normal(0.0, self.std_theta, (self.N,1,1))
-
+	dt = np.zeros((self.N,1,1))
+        if self.std_x != 0.0:
+ 	    dx = dx + np.random.normal(0.0, self.std_x, (self.N,1,1))
+        else:
+	    dx = dx + np.zeros((self.N,1,1))
+	if self.std_y != 0.0:
+	    dy = dy + np.random.normal(0.0, self.std_x, (self.N,1,1))
+	else:
+	    dy = dy + np.zeros((self.N,1,1))
+	if self.std_theta != 0.0:
+	    dt = np.random.normal(0.0, self.std_theta, (self.N,1,1))
+	else:
+	    dt = np.zeros((self.N,1,1))
         # convert to change in global pose
         delta_x = dx*np.cos(self.particles[:,2:3]) - dy*np.sin(self.particles[:,2:3])
         delta_y = dx*np.sin(self.particles[:,2:3]) + dy*np.cos(self.particles[:,2:3])
@@ -140,6 +149,7 @@ class ParticleFilter():
 	    points[1].append(p.y)
 	#print 'Ack'
 	#print points
+	N_points = len(points[0])
         pts = np.zeros((1,3,len(points[0])))
         pts[0,1:3,:] = points
  
@@ -203,9 +213,16 @@ class ParticleFilter():
 	prob_sum = np.array(prob_sum)
 	#print 'prob sum: ', prob_sum	
 	#prob_sum =  np.sum(self.weighted_maps[points[:,0], points[:,1], points[:,2]].reshape((self.N, points.shape[0]//self.N)), axis=1)
-	if points.shape[0]<50:
+	if N_points < 100:
+	    self.std_x = 0.0 # 0.0000001
+	    self.std_y = 0.0 #000001
+	    self.std_theta = 0.0 #000001
 	    print 'No particles match the seen image'
 	    return
+	else:
+	    self.std_x = 0.01
+	    self.std_y = 0.005
+	    self.std_theta = 0.003
 	weights = prob_sum / np.sum(prob_sum)
 	# resample the particles based on the new weights
         particle_ind = np.arange(self.N)

@@ -39,7 +39,7 @@ class WaiterLocator():
     	points[:,0] = pts[:,0]*np.cos(self.robot_theta) - pts[:,1]*np.sin(self.robot_theta) + self.robot_x
     	points[:,1] = pts[:,0]*np.sin(self.robot_theta) + pts[:,1]*np.cos(self.robot_theta) + self.robot_y
     	# keep points where waiter could be
-    	points = points[np.logical_and(points[:,0]>0.02, points[:,0]<1.0),:]
+    	points = points[np.logical_and(points[:,0]>0.05, points[:,0]<0.95),:]
     	points = points[np.logical_and(points[:,1]>1.3, points[:,1]<1.7)]
  	# if no valid points, no waiter
 	if points.shape[0]==0:

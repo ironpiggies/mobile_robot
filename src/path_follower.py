@@ -32,8 +32,9 @@ class SimplePursuit():
 	    if self.x<1.2 and self.x>0.3:
 		if self.y<1.8 and self.y>1.2:
 		    self.wait = True
-		    return
+		    #return
 	self.wait = False
+	
 
     def pubVelocity(self):
         if len(self.path)==0 or self.wait:
